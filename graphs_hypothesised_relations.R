@@ -26,7 +26,11 @@ p1<-ggplot()+
   xlab("Volume of spruce")+
   ylab("SBB susceptibility")+
   theme_classic()+
-  theme(text = element_text(size = 15))+
+  theme(text = element_text(size = 15))+                                                           
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank()) 
+
++
   scale_x_discrete(breaks = c(2,18), labels=c("Low","High")) #why is this not working??
 
 #Volume of birch
@@ -35,7 +39,10 @@ p2<-ggplot()+
   xlab("Volume of birch")+
   ylab("SBB susceptibility")+
   theme_classic()+
-  theme(text = element_text(size = 15)) 
+  theme(text = element_text(size = 15)) +                                                           
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank()) 
+
 
 #Soil moisture
 p3<-ggplot()+
@@ -43,7 +50,10 @@ p3<-ggplot()+
   xlab("Soil moisture")+
   ylab("SBB susceptibility")+
   theme_classic()+
-  theme(text = element_text(size = 15)) 
+  theme(text = element_text(size = 15)) +                                                           
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank()) 
+
 
 #Temperature sum
 p4<-ggplot()+
@@ -64,7 +74,10 @@ p5<-ggplot()+
   ylab("SBB susceptibility")+
   theme_classic()+
   theme(text = element_text(size = 15))+
-  ylim(0.5,3)
+  ylim(0.5,3)+                                                           
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank()) 
+
 
 
 #Storm
@@ -75,7 +88,10 @@ p6<-ggplot()+
   xlab("Storm occurence")+
   ylab("SBB susceptibility")+
   theme_classic()+
-  theme(text = element_text(size = 15)) 
+  theme(text = element_text(size = 15))+                                                           
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank()) 
+
 
 #Age structure 
 p7<-ggplot()+
@@ -83,7 +99,10 @@ p7<-ggplot()+
   xlab("Age structure")+
   ylab("SBB susceptibility")+
   theme_classic()+
-  theme(text = element_text(size = 15)) 
+  theme(text = element_text(size = 15))+                                                           
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank()) 
+
 
 #Diameter
 p8<-ggplot()+
@@ -91,9 +110,12 @@ p8<-ggplot()+
   xlab("Diameter")+
   ylab("SBB susceptibility")+
   theme_classic()+
-  theme(text = element_text(size = 15)) 
+  theme(text = element_text(size = 15))+                                                           
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank()) 
 
 library(ggpubr)
 
 ggarrange(p1,p2,p3,p4,p5,p6,p7,p8)
 
+ggarrange(p1,p2,p3,p5,p7,p8)
