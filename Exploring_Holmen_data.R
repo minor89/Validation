@@ -112,12 +112,10 @@ ggplot(data=val)+
 
 
 val$dgv_t<-as.factor(ifelse(val$DGV>20,1,0)) #make binary var for diameter
-val$soil<-as.factor(val$MARKF) #make into factor
+
 
 val$soil<-factor(val$MARKF,order=TRUE,levels=c("1","2","3","4")) #make soil into ordinal categorical var
 
-model_vol<-lm(SVol~M3SK_HA_Gr+M3SK_HA_Lo+ALD_TOT+TR_HA+dgv_t+soil+tree_site,data=val)
-Anova(model_vol)
 
 #I want to make a column from site index into only G or T
 #Partial string match
@@ -128,18 +126,83 @@ library(purrr)
 #make site index into character to be able to split 
 val$SI_TM<-as.character(val$SI_TM)
 
+
 #make a new column based on if G or T in site index column
 val<-val %>%
   mutate(tree_site = map_chr(SI_TM, ~unlist(strsplit(.,""))[1])) %>%
   mutate(tree_site = case_when(tree_site == "T" ~ "Pine",
                             tree_site == "G" ~ "Spruce"))
 
+val$site_p<-substring(val$SI_TM,2,3)
+
+str(val)
+
 #make site index and tree site columns into factors 
 val$SI_TM<-as.factor(val$SI_TM)
 val$tree_site<-as.factor(val$tree_site)
+val$site_p<-factor(val$site_p,order=TRUE)
+
 
 ggplot(data=val)+
   geom_point(aes(x=tree_site,y=SVol/M3SK_TOT_G))+
   theme_classic()+
   facet_wrap(~soil)
+
+val_zero<-val[which(val$SVol!=0),]
+
+str(val_zero)
+
+model_vol<-glm(SVol~M3SK_HA_Gr+M3SK_HA_Lo+ALD_TOT+TR_HA+dgv_t+soil+tree_site,family=Gamma(link = "log"),data=val_zero)
+Anova(model_vol)
+#now I think tree_site is sign because there are fewer objects (need to scale for this somehow)
+ci_vol<-confint(model_vol)
+plot(model_vol)
+
+hist(resid(model_vol))
+
+ggplot(data=model_vol)+
+  geom_point(aes(x=model_vol$linear.predictors,y=model_vol$fitted.values))
+
+
+
+model_ar<-glm(Areal/TOTALAREAL~M3SK_HA_Gr+M3SK_HA_Lo+ALD_TOT+TR_HA+dgv_t+soil+tree_site,family=Gamma(link = "log"),data=val_zero)
+Anova(model_ar)
+
+min(val_zero$M3SK_HA_Gr)
+min(val_zero$M3SK_HA_Lo)
+min(val_zero$ALD_TOT)
+
+
+ggplot(data=val_zero)+
+  geom_point(aes(x=site_p,y=SVol))+
+  theme_classic()+
+  facet_wrap(~tree_site)
+
+ggplot(data=val_zero)+
+  geom_point(aes(x=soil,y=SVol))+
+  theme_classic()
+
+
+
+plot(val$SVol)
+mean(val$SVol)
+sd(val$SVol)
+hist(rnorm(100,38,69))
+hist(rgamma(100,(38^2/69^2),(38/69^2)))
+hist(val$SVol)
+hist(val_zero$SVol)
+
+hist(val$Areal)
+
+
+
+
+#calculate index for these stands and/or make some kind of model based on index
+for(i in 1:length(val_zero$BESTNR)){
+  
+  val_zero$SBB_index[i]<-ifelse(val_zero$dgv_t[i]==0,0,1)
+  
+  
+  
+}
 
