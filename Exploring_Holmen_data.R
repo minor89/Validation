@@ -74,7 +74,11 @@ ggplot(data=valS)+
 
 #check spruce volume - all ways possible
 ggplot(data=valS)+
-  geom_point(aes(x=M3SK_HA_Gr,y=SVol)) #damaged volume
+  geom_point(aes(x=M3SK_HA_Gr,y=SVol))+
+  theme_classic()+
+  ylab("Damaged volume")+
+  xlab("Volume of spruce (per ha)")
+  #damaged volume
 
 ggplot(data=valS)+
   geom_point(aes(x=M3SK_HA_Gr,y=SVol/M3SK_TOT_G))+ #damaged volume per total volume spruce
@@ -123,23 +127,67 @@ cor.test(valS$M3SK_TOT_G,valS$M3SK_TOT_L) #0.24
 #Damage/no damage, volume, area is explained by the combo of stand vars?
 
 vars<-cbind(valS$ALD_TOT,valS$DGV,valS$M3SK_HA_Gr,valS$M3SK_HA_Lo,valS$TR_HA,valS$soil,valS$tree_site)
+vars<-data.frame(vars)
+colnames(vars)<-c("Age","Diamter","Vol spruce","Vol broadleaves","Density","Soil moisture","Site type")
+str(vars)
 
-vars.pca<-prcomp(vars,center=TRUE,scale. = TRUE)
+
+library(vegan)
+
+#vars.pca<-prcomp(vars,center=TRUE,scale. = TRUE)
+vars.pca<-rda(vars,scale=TRUE)
 vars.pca
 plot(vars.pca)
 summary(vars.pca)
+vars.pca$CA
+
+cor(vars)
+
+summary(eigenvals(vars.pca))
 
 SBB_d<-as.factor(valS$damage)
 
-library(ggfortify)
-sbb.pca.plot <- autoplot(vars.pca,
-                          data = vars,
-                          colour = SBB_d)
+vars.w.group<-cbind(vars,SBB_d)
 
-biplot(vars.pca)
+biplot(vars.pca,display = c("sites", "species"),type = c("text", "points"))
+ordiellipse(vars.pca,group=SBB_d,col=c("orange","lightblue"),draw="polygon",alpha=100,conf = .95)
 
-library(devtools)
-install_github("vqv/ggbiplot")
+biplot(vars.pca,display = "sites",type =  "points")
+ordiellipse(vars.pca,group=SBB_d,col=c("orange","lightblue"),draw="polygon",alpha=100,conf = .95)
+ordihull(vars.pca,group=SBB_d,draw="polygon",col=c("orange","lightblue"))
+
+
+pc1<-vars.pca$CA$u[,1]
+pc2<-vars.pca$CA$u[,2]
+
+model.w.pca<-glm(damage~pc1+pc2,data=valS,family = binomial)
+Anova(model.w.pca)
+summary(model.w.pca)
+
+valS1<-valS[which(valS$SVol>0),]
+vars2<-cbind(valS1$ALD_TOT,valS1$DGV,valS1$M3SK_HA_Gr,valS1$M3SK_HA_Lo,valS1$TR_HA,valS1$soil,valS1$tree_site)
+vars2<-data.frame(vars2)
+colnames(vars2)<-c("Age","Diamter","Vol spruce","Vol broadleaves","Density","Soil moisture","Site type")
+str(vars2)
+
+#vars.pca<-prcomp(vars,center=TRUE,scale. = TRUE)
+vars.pca2<-rda(vars2,scale=TRUE)
+pc1.2<-vars.pca2$CA$u[,1]
+pc2.2<-vars.pca2$CA$u[,2]
+model.w.pca2<-glm(SVol~pc1.2+pc2.2,data=valS1,family = Gamma(link="log"))
+Anova(model.w.pca2)
+summary(model.w.pca2)
+
+
+
+
+
+nmds_analysis<-metaMDS(vars,k=2)
+plot(nmds_analysis)
+
+ordiplot(nmds_analysis,type="n")
+ordihull(nmds_analysis,groups=SBB_d,draw="polygon")
+orditorp(nmds_analysis,display="species",col="red")
 
 #Ideas:
 #Do all analyses with area and volume and the proportions
@@ -210,10 +258,57 @@ min(val_zero$M3SK_HA_Lo)
 min(val_zero$ALD_TOT)
 
 
-ggplot(data=val_zero)+
+ggplot(data=valS)+
   geom_point(aes(x=site_p,y=SVol))+
   theme_classic()+
-  facet_wrap(~tree_site)
+  facet_wrap(~tree_site,ncol=1)
+
+ggplot(data=valS[which(valS$tree_site=="Spruce"),])+
+  geom_point(aes(x=site_p,y=SVol))+
+  theme_classic()+
+  xlab("Site index")+
+  ylab("Damged volume")+
+  ggtitle("Spruce site index")
+
+
+ggplot(data=valS[which(valS$tree_site=="Pine"),])+
+  geom_point(aes(x=site_p,y=SVol))+
+  theme_classic()+
+  xlab("Site index")+
+  ylab("Damged volume")+
+  ggtitle("Pine site index")
+
+
+
+
+ggplot(data=valS)+
+  geom_boxplot(aes(x=soil,y=SVol),color="darkgrey")+
+  theme_classic()+
+  xlab("Soil moisture level")+
+  ylab("Damged volume")+
+  ylim(0,200)+
+  stat_summary(fun="mean",aes(x=soil,y=SVol,label=signif(..y..,3)),geom="text")+ 
+  scale_x_discrete(labels=c("1" = "Dry", "2" = "Mesic", "3" = "Mesic-moist"))
+
+ggplot(data=valS,aes(x=soil,y=SVol))+
+  geom_dotplot(binaxis = "y", stackdir = "center",binwidth = 2,color="grey")+
+  theme_classic()+
+  xlab("Soil moisture level")+
+  ylab("Damged volume")+
+  ylim(0,200)+
+  stat_summary(fun="mean",aes(x=soil,y=SVol),size=0.8)+ 
+  scale_x_discrete(labels=c("1" = "Dry", "2" = "Mesic", "3" = "Mesic-moist"))
+
+ggplot(data=valS,aes(x=soil,y=SVol))+
+  geom_jitter(color="grey",height=0,width=0.02)+
+  theme_classic()+
+  xlab("Soil moisture level")+
+  ylab("Damged volume")+
+  ylim(0,200)+
+  stat_summary(fun="mean",aes(x=soil,y=SVol),size=0.8)+ 
+  scale_x_discrete(labels=c("1" = "Dry", "2" = "Mesic", "3" = "Mesic-moist"))
+
+#label=signif(..y..,3)
 
 ggplot(data=val_zero)+
   geom_point(aes(x=soil,y=SVol))+
@@ -231,6 +326,10 @@ hist(val_zero$SVol)
 
 hist(val$Areal)
 
+#is it so that "utförd" means that they have removed damaged tree and that
+#all areas that are utförd has a damage volume of zero?
+
+val_u<-val[which(val$Status!="Planerad"),]
 
 
 
